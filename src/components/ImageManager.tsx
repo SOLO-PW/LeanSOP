@@ -38,7 +38,7 @@ function ImageManager({ images, onChange, maxImages = 10 }: ImageManagerProps) {
         name: fileName,
         base64,
         path: filePath,
-        status: images.length === 0 ? "default" : images.length === 1 ? "success" : "warning",
+        status: "success",
       };
       onChange([...images, newImage]);
     } catch (e) {
@@ -50,10 +50,8 @@ function ImageManager({ images, onChange, maxImages = 10 }: ImageManagerProps) {
     onChange(images.filter((img) => img.id !== id));
   };
 
-  const statusClass = (index: number): "default" | "success" | "warning" => {
-    if (index === 0) return "default";
-    if (index === 1) return "success";
-    return "warning";
+  const statusClass = (img: SopImage): "default" | "success" | "warning" => {
+    return img.status;
   };
 
   return (
@@ -64,7 +62,7 @@ function ImageManager({ images, onChange, maxImages = 10 }: ImageManagerProps) {
       </div>
       <div className="image-grid">
         {images.map((img, idx) => (
-          <div key={img.id} className={`image-item status-${statusClass(idx)}`}>
+          <div key={img.id} className={`image-item status-${statusClass(img)}`}>
             {img.base64 ? (
               <img
                 src={img.base64}

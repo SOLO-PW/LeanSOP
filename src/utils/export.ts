@@ -114,12 +114,17 @@ function renderOffscreen(doc: SopDocument): Promise<HTMLIFrameElement> {
     iframe.style.top = "0";
     iframe.style.width = "840px";
     iframe.style.border = "none";
-    iframe.onload = () => resolve(iframe);
-    iframe.onerror = reject;
-    document.body.appendChild(iframe);
     const html = generateSopHtml(doc);
     const blob = new Blob([html.replace(/<script[\s\S]*?<\/script>/, "")], { type: "text/html" });
-    iframe.src = URL.createObjectURL(blob);
+    const blobUrl = URL.createObjectURL(blob);
+    iframe.onload = () => resolve(iframe);
+    iframe.onerror = () => {
+      URL.revokeObjectURL(blobUrl);
+      iframe.remove();
+      reject(new Error("离屏渲染iframe加载失败"));
+    };
+    document.body.appendChild(iframe);
+    iframe.src = blobUrl;
   });
 }
 
