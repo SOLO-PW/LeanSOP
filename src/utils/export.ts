@@ -1,3 +1,4 @@
+import { toPng } from "html-to-image";
 import type { SopDocument } from "../types/sop";
 
 function isTauriEnv(): boolean {
@@ -102,5 +103,58 @@ export async function exportToPdf(doc: SopDocument): Promise<void> {
     await exportViaTauri(doc);
   } else {
     exportViaBrowser(doc);
+  }
+}
+
+function renderOffscreen(doc: SopDocument): Promise<HTMLIFrameElement> {
+  return new Promise((resolve, reject) => {
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.left = "-99999px";
+    iframe.style.top = "0";
+    iframe.style.width = "840px";
+    iframe.style.border = "none";
+    iframe.onload = () => resolve(iframe);
+    iframe.onerror = reject;
+    document.body.appendChild(iframe);
+    const html = generateSopHtml(doc);
+    const blob = new Blob([html.replace(/<script[\s\S]*?<\/script>/, "")], { type: "text/html" });
+    iframe.src = URL.createObjectURL(blob);
+  });
+}
+
+async function downloadDataUrl(dataUrl: string, fileName: string): Promise<void> {
+  if (isTauriEnv()) {
+    const { writeFile } = await import("@tauri-apps/plugin-fs");
+    const { tempDir, join } = await import("@tauri-apps/api/path");
+    const { openPath } = await import("@tauri-apps/plugin-opener");
+    const base64 = dataUrl.split(",")[1];
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const tmp = await tempDir();
+    const fullPath = await join(tmp, fileName);
+    await writeFile(fullPath, bytes);
+    await openPath(fullPath);
+  } else {
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = fileName;
+    a.click();
+  }
+}
+
+export async function exportToPng(doc: SopDocument, highQuality = false): Promise<void> {
+  const iframe = await renderOffscreen(doc);
+  try {
+    const docEl = iframe.contentDocument?.documentElement;
+    if (!docEl) throw new Error("无法访问渲染内容");
+    const pixelRatio = highQuality ? 3 : 2;
+    const dataUrl = await toPng(docEl, { pixelRatio, backgroundColor: "#ffffff" });
+    const fileName = `${doc.header.sopName || doc.header.processName || "SOP"}.png`;
+    await downloadDataUrl(dataUrl, fileName);
+  } finally {
+    URL.revokeObjectURL(iframe.src);
+    iframe.remove();
   }
 }

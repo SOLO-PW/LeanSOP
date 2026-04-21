@@ -1,6 +1,6 @@
 import { DownloadOutlined, SaveOutlined, FileImageOutlined, FileTextOutlined } from "@ant-design/icons";
 import { Switch, message } from "antd";
-import { exportToPdf } from "../utils/export";
+import { exportToPdf, exportToPng } from "../utils/export";
 import type { SopDocument, ExportFormat, ExportOptions } from "../types/sop";
 
 interface ExportPanelProps {
@@ -16,7 +16,11 @@ function ExportPanel({ document, exportOpts, onExportOptsChange }: ExportPanelPr
       return;
     }
     try {
-      await exportToPdf(document);
+      if (exportOpts.format === "png") {
+        await exportToPng(document, exportOpts.highQuality);
+      } else {
+        await exportToPdf(document);
+      }
       message.success("导出成功");
     } catch (e) {
       message.error(`导出失败: ${e}`);

@@ -29,6 +29,9 @@ importers:
       dayjs:
         specifier: ^1.11.20
         version: 1.11.20
+      html-to-image:
+        specifier: ^1.11.13
+        version: 1.11.13
       react:
         specifier: ^19.1.0
         version: 19.2.5
@@ -971,6 +974,9 @@ packages:
   gensync@1.0.0-beta.2:
     resolution: {integrity: sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==}
     engines: {node: '>=6.9.0'}
+
+  html-to-image@1.11.13:
+    resolution: {integrity: sha512-cuOPoI7WApyhBElTTb9oqsawRvZ0rHhaHwghRLlTuffoD1B2aDemlCruLeZrUIIdvG7gs9xeELEPm6PhuASqrg==}
 
   is-mobile@5.0.0:
     resolution: {integrity: sha512-Tz/yndySvLAEXh+Uk8liFCxOwVH6YutuR74utvOcu7I9Di+DwM0mtdPVZNaVvvBUM2OXxne/NhOs1zAO7riusQ==}
@@ -2033,6 +2039,8 @@ snapshots:
     optional: true
 
   gensync@1.0.0-beta.2: {}
+
+  html-to-image@1.11.13: {}
 
   is-mobile@5.0.0: {}
 
