@@ -10,12 +10,13 @@ function generateSopHtml(doc: SopDocument): string {
     .map(
       (step) => `
     <div class="step">
-      <div class="step-header">步骤 ${step.order}</div>
+      <div class="step-header">步骤 ${step.order} - ${step.title || ""}</div>
       <div class="step-body">
         ${step.imageBase64 ? `<div class="step-image"><img src="${step.imageBase64}" alt="步骤${step.order}" /></div>` : ""}
         <div class="step-text">
           ${step.description ? `<div class="step-desc"><strong>操作说明：</strong><p>${step.description}</p></div>` : ""}
           ${step.requirements ? `<div class="step-req"><strong>技术要求：</strong><p>${step.requirements}</p></div>` : ""}
+          ${step.keyPoints && step.keyPoints.length > 0 ? `<div class="step-keys"><strong>关键要点：</strong><p>${step.keyPoints.join("、")}</p></div>` : ""}
         </div>
       </div>
     </div>`
@@ -26,7 +27,7 @@ function generateSopHtml(doc: SopDocument): string {
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>${header.processName} - SOP</title>
+  <title>${header.sopName || header.processName} - SOP</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: "Microsoft YaHei", "SimSun", sans-serif; padding: 20px; color: #333; }
@@ -43,6 +44,7 @@ function generateSopHtml(doc: SopDocument): string {
     .step-text { flex: 1; font-size: 13px; line-height: 1.6; }
     .step-desc { margin-bottom: 8px; }
     .step-req { color: #c00; }
+    .step-keys { color: #1677FF; }
     @media print {
       body { padding: 0; }
       .sop-doc { border: none; }
@@ -53,10 +55,11 @@ function generateSopHtml(doc: SopDocument): string {
   <div class="sop-doc">
     <div class="sop-title">标准作业指导书</div>
     <table class="info-table">
-      <tr><td class="label">工序名称</td><td>${header.processName}</td><td class="label">文件编号</td><td>${header.fileNumber}</td></tr>
-      <tr><td class="label">编制日期</td><td>${header.createDate}</td><td class="label">版本</td><td>${header.version}</td></tr>
+      <tr><td class="label">SOP名称</td><td>${header.sopName}</td><td class="label">工序名称</td><td>${header.processName}</td></tr>
+      <tr><td class="label">所属部门</td><td>${header.department}</td><td class="label">生产线</td><td>${header.line}</td></tr>
+      <tr><td class="label">生效日期</td><td>${header.createDate}</td><td class="label">版本</td><td>${header.version}</td></tr>
       <tr><td class="label">编制人</td><td>${header.author}</td><td class="label">审核人</td><td>${header.reviewer}</td></tr>
-      <tr><td class="label">批准人</td><td>${header.approver}</td><td class="label">页数</td><td>${Math.ceil(steps.length / 4) || 1}</td></tr>
+      <tr><td class="label">批准人</td><td>${header.approver}</td><td class="label">优先级</td><td>${header.priority === "high" ? "高" : header.priority === "medium" ? "中" : "低"}</td></tr>
     </table>
     ${stepsHtml}
   </div>
@@ -88,7 +91,7 @@ function exportViaBrowser(doc: SopDocument): void {
   if (!win) {
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${doc.header.processName || "SOP"}.html`;
+    a.download = `${doc.header.sopName || doc.header.processName || "SOP"}.html`;
     a.click();
   }
   setTimeout(() => URL.revokeObjectURL(url), 60000);
