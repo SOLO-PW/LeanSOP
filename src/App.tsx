@@ -1,50 +1,88 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
+import { Layout, Typography, Button, Space, message } from "antd";
+import SopHeaderForm from "./components/SopHeaderForm";
+import SopStepEditor from "./components/SopStepEditor";
+import SopPreview from "./components/SopPreview";
+import { exportToPdf } from "./utils/export";
+import type { SopHeader, SopStep, SopDocument } from "./types/sop";
 import "./App.css";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+const { Header, Content, Footer } = Layout;
+const { Title } = Typography;
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+function App() {
+  const [header, setHeader] = useState<SopHeader>({
+    processName: "",
+    fileNumber: "",
+    createDate: new Date().toISOString().split("T")[0],
+    version: "V1.0",
+    author: "",
+    reviewer: "",
+    approver: "",
+  });
+  const [steps, setSteps] = useState<SopStep[]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  const validateRequired = (): boolean => {
+    if (!header.processName) {
+      message.warning("请填写工序名称");
+      return false;
+    }
+    if (!header.fileNumber) {
+      message.warning("请填写文件编号");
+      return false;
+    }
+    if (!header.author) {
+      message.warning("请填写编制人");
+      return false;
+    }
+    return true;
+  };
+
+  const handlePreview = () => {
+    if (!validateRequired()) return;
+    setPreviewOpen(true);
+  };
+
+  const handleExport = async () => {
+    if (!validateRequired()) return;
+    const doc: SopDocument = { header, steps };
+    try {
+      await exportToPdf(doc);
+    } catch (e) {
+      message.error(`导出失败: ${e}`);
+    }
+  };
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+    <Layout className="app-layout">
+      <Header className="app-header">
+        <Title level={3} className="app-title">LeanSOP - 精益标准作业指导书</Title>
+      </Header>
+      <Content className="app-content">
+        <div className="left-panel">
+          <SopHeaderForm header={header} onChange={setHeader} />
+        </div>
+        <div className="right-panel">
+          <SopStepEditor steps={steps} onChange={setSteps} />
+        </div>
+      </Content>
+      <Footer className="app-footer">
+        <Space>
+          <Button type="primary" size="large" onClick={handlePreview}>
+            预览文档
+          </Button>
+          <Button type="primary" size="large" onClick={handleExport}>
+            导出 PDF
+          </Button>
+        </Space>
+      </Footer>
+      <SopPreview
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        document={{ header, steps }}
+      />
+    </Layout>
   );
 }
 
