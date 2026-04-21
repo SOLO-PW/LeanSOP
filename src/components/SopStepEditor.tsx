@@ -9,6 +9,10 @@ interface SopStepEditorProps {
   onChange: (steps: SopStep[]) => void;
 }
 
+function isTauriEnv(): boolean {
+  return !!(window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
+}
+
 function SopStepEditor({ steps, onChange }: SopStepEditorProps) {
   const addStep = () => {
     const newStep: SopStep = {
@@ -33,6 +37,10 @@ function SopStepEditor({ steps, onChange }: SopStepEditorProps) {
   };
 
   const handleImageUpload = async (id: string) => {
+    if (!isTauriEnv()) {
+      message.error("图片上传功能需要通过 Tauri 运行，请使用 pnpm tauri dev 启动");
+      return;
+    }
     try {
       const selected = await open({
         multiple: false,

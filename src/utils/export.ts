@@ -1,7 +1,8 @@
 import type { SopDocument } from "../types/sop";
-import { writeFile } from "@tauri-apps/plugin-fs";
-import { tempDir, join } from "@tauri-apps/api/path";
-import { openPath } from "@tauri-apps/plugin-opener";
+
+function isTauriEnv(): boolean {
+  return !!(window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
+}
 
 function generateSopHtml(doc: SopDocument): string {
   const { header, steps } = doc;
@@ -66,7 +67,10 @@ function generateSopHtml(doc: SopDocument): string {
 </html>`;
 }
 
-export async function exportToPdf(doc: SopDocument): Promise<void> {
+async function exportViaTauri(doc: SopDocument): Promise<void> {
+  const { writeFile } = await import("@tauri-apps/plugin-fs");
+  const { tempDir, join } = await import("@tauri-apps/api/path");
+  const { openPath } = await import("@tauri-apps/plugin-opener");
   const html = generateSopHtml(doc);
   const encoder = new TextEncoder();
   const tmp = await tempDir();
@@ -74,4 +78,26 @@ export async function exportToPdf(doc: SopDocument): Promise<void> {
   const fullPath = await join(tmp, fileName);
   await writeFile(fullPath, encoder.encode(html));
   await openPath(fullPath);
+}
+
+function exportViaBrowser(doc: SopDocument): void {
+  const html = generateSopHtml(doc);
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, "_blank");
+  if (!win) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${doc.header.processName || "SOP"}.html`;
+    a.click();
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+export async function exportToPdf(doc: SopDocument): Promise<void> {
+  if (isTauriEnv()) {
+    await exportViaTauri(doc);
+  } else {
+    exportViaBrowser(doc);
+  }
 }
