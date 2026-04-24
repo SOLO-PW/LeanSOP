@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import TitleBar from "./components/TitleBar";
 import Sidebar from "./components/Sidebar";
 import SopHeaderForm from "./components/SopHeaderForm";
@@ -7,15 +7,8 @@ import SopStepEditor from "./components/SopStepEditor";
 import PreviewPanel from "./components/PreviewPanel";
 import ExportPanel from "./components/ExportPanel";
 import type { SopHeader, SopStep, SopImage, SopDocument, ExportOptions } from "./types/sop";
+import { loadDraft, saveDraft } from "./utils/storage";
 import "./App.css";
-
-function loadDraft(): SopDocument | null {
-  try {
-    const raw = localStorage.getItem("leansop_draft");
-    if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
-  return null;
-}
 
 function App() {
   const draft = loadDraft();
@@ -46,18 +39,19 @@ function App() {
   });
 
   const sopDoc: SopDocument = { header, images, steps };
+  const sopDocRef = useRef(sopDoc);
+  sopDocRef.current = sopDoc;
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
-        const data = JSON.stringify(sopDoc, null, 2);
-        localStorage.setItem("leansop_draft", data);
+        saveDraft(sopDocRef.current);
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [sopDoc]);
+  }, []);
 
   return (
     <div className="app-layout">

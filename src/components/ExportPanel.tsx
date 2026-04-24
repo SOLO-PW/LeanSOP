@@ -1,7 +1,8 @@
 import { DownloadOutlined, SaveOutlined, FileImageOutlined, FileTextOutlined } from "@ant-design/icons";
 import { Switch, message } from "antd";
-import { exportToPdf, exportToPng } from "../utils/export";
+import { exportToHtml, exportToPng } from "../utils/export";
 import type { SopDocument, ExportFormat, ExportOptions } from "../types/sop";
+import { saveDraft } from "../utils/storage";
 
 interface ExportPanelProps {
   document: SopDocument;
@@ -19,7 +20,7 @@ function ExportPanel({ document, exportOpts, onExportOptsChange }: ExportPanelPr
       if (exportOpts.format === "png") {
         await exportToPng(document, exportOpts.highQuality);
       } else {
-        await exportToPdf(document);
+        await exportToHtml(document);
       }
       message.success("导出成功");
     } catch (e) {
@@ -28,11 +29,9 @@ function ExportPanel({ document, exportOpts, onExportOptsChange }: ExportPanelPr
   };
 
   const handleSaveDraft = () => {
-    try {
-      const data = JSON.stringify(document, null, 2);
-      localStorage.setItem("leansop_draft", data);
+    if (saveDraft(document)) {
       message.success("草稿已保存");
-    } catch {
+    } else {
       message.error("保存草稿失败");
     }
   };

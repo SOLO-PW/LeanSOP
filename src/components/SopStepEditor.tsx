@@ -14,14 +14,11 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import type { SopStep } from "../types/sop";
+import { isTauriEnv } from "../utils/env";
 
 interface SopStepEditorProps {
   steps: SopStep[];
   onChange: (steps: SopStep[]) => void;
-}
-
-function isTauriEnv(): boolean {
-  return !!(window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
 }
 
 function SopStepEditor({ steps, onChange }: SopStepEditorProps) {
@@ -52,6 +49,10 @@ function SopStepEditor({ steps, onChange }: SopStepEditorProps) {
 
   const updateStep = (id: string, field: keyof SopStep, value: unknown) => {
     onChange(steps.map((s) => (s.id === id ? { ...s, [field]: value } : s)));
+  };
+
+  const updateStepFields = (id: string, fields: Partial<SopStep>) => {
+    onChange(steps.map((s) => (s.id === id ? { ...s, ...fields } : s)));
   };
 
   const moveStep = (id: string, direction: "up" | "down") => {
@@ -95,8 +96,7 @@ function SopStepEditor({ steps, onChange }: SopStepEditorProps) {
       if (!selected) return;
       const filePath = selected as string;
       const base64: string = await invoke("read_image_as_base64", { path: filePath });
-      updateStep(id, "imagePath", filePath);
-      updateStep(id, "imageBase64", base64);
+      updateStepFields(id, { imagePath: filePath, imageBase64: base64 });
     } catch (e) {
       message.error(`图片上传失败: ${e}`);
     }

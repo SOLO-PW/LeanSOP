@@ -3,15 +3,12 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { message } from "antd";
 import type { SopImage } from "../types/sop";
+import { isTauriEnv } from "../utils/env";
 
 interface ImageManagerProps {
   images: SopImage[];
   onChange: (images: SopImage[]) => void;
   maxImages?: number;
-}
-
-function isTauriEnv(): boolean {
-  return !!(window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
 }
 
 function ImageManager({ images, onChange, maxImages = 10 }: ImageManagerProps) {

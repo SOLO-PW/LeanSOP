@@ -3,12 +3,18 @@ use std::path::PathBuf;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 
+const MAX_IMAGE_SIZE: u64 = 5 * 1024 * 1024; // 5MB
+
 /// 读取图片文件并转换为 base64 data URI
 #[tauri::command]
 fn read_image_as_base64(path: String) -> Result<String, String> {
     let file_path = PathBuf::from(&path);
     if !file_path.exists() {
         return Err(format!("文件不存在: {}", path));
+    }
+    let metadata = fs::metadata(&file_path).map_err(|e| format!("读取文件信息失败: {}", e))?;
+    if metadata.len() > MAX_IMAGE_SIZE {
+        return Err(format!("图片大小超过限制（最大 5MB），当前文件大小：{:.1}MB", metadata.len() as f64 / 1024.0 / 1024.0));
     }
     let ext = file_path
         .extension()

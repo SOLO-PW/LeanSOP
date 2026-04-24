@@ -1,9 +1,6 @@
 import { toPng } from "html-to-image";
 import type { SopDocument } from "../types/sop";
-
-function isTauriEnv(): boolean {
-  return !!(window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
-}
+import { isTauriEnv } from "./env";
 
 function generateSopHtml(doc: SopDocument): string {
   const { header, steps } = doc;
@@ -98,7 +95,7 @@ function exportViaBrowser(doc: SopDocument): void {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
-export async function exportToPdf(doc: SopDocument): Promise<void> {
+export async function exportToHtml(doc: SopDocument): Promise<void> {
   if (isTauriEnv()) {
     await exportViaTauri(doc);
   } else {
